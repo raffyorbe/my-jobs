@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException # Bring in the FastAPI and HTTPException classes
-from models import TodoCreate, TodoResponse # Imports models from models.py -  from filename import modelname, from directory.filename if inside subfolder
+from fastapi import FastAPI, HTTPException, Query # Bring in the FastAPI and HTTPException classes
+from typing import Optional
+from models import JobCreate, JobResponse # Imports models from models.py -  from filename import modelname, from directory.filename if inside subfolder
 from fastapi.middleware.cors import CORSMiddleware # CORS
-from utils import find_todo
+from utils import find_job
 
 
 app = FastAPI() # Create web app instance. This is the API app
@@ -20,51 +21,64 @@ app.add_middleware(
 )
 
 # -------- Database --------
-todos = [] 
+jobs = [] 
 
 @app.get("/") # When browser runs 127.0.0.1:8000/, run the function below.
 def read_root(): # Function
     return {"message": "API is running"} # Output of the function
 
-# -------- Read todo list --------
-@app.get("/todos", response_model=list[TodoResponse]) # list each todo following TodoResponse format
-def get_todos():
-    return todos # Returns list of todos
+# -------- Read job list --------
+@app.get("/jobs", response_model=list[JobResponse]) # list each job following jobResponse format
+def get_jobs(
+    completed: Optional[bool] = Query(default=None),
+    title: Optional[str] = Query(default=None)
+):
+    results = jobs 
 
-# -------- Read single todo --------
-@app.get("/todos/{todo_id}", response_model=TodoResponse) # Dynamic path
-def get_todo(todo_id: int): # Extract todo_id from url and assign as integer
-    index = find_todo(todo_id, todos)
+    if completed is not None: # Filter by status
+        results = [job for job in results if job.completed == completed]
+
+    if title is not None: #Filter by name (search function)
+        results = [job for job in results if title.lower() in job.title.lower()]
+
+    # results takes all job entries [] in jobs[] that meet the filtering condition
+    
+    return results # Returns list of jobs (filtered)
+
+# -------- Read single job --------
+@app.get("/jobs/{job_id}", response_model=JobResponse) # Dynamic path
+def get_job(job_id: int): # Extract job_id from url and assign as integer
+    index = find_job(job_id, jobs)
     if index is None:
-        raise HTTPException(status_code=404, detail=f"Todo {todo_id} not found") # Else (after loop), raise HTTP Exception
-    return todos[index]
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found") # Else (after loop), raise HTTP Exception
+    return jobs[index]
 
-# -------- Create todo --------
-@app.post("/todos", response_model=TodoResponse) # response_model tells function to return following TodoResponse model
-def create_todo(todo: TodoCreate): # Create todo as TodoCreate data type then run function.
-    if any(t.id == todo.id for t in todos):
-        raise HTTPException(status_code=400, detail=f"Todo with id {todo.id} already exists")
-    if not todo.title.strip():
+# -------- Create job --------
+@app.post("/jobs", response_model=JobResponse) # response_model tells function to return following jobResponse model
+def create_job(job: JobCreate): # Create job as jobCreate data type then run function.
+    if any(j.id == job.id for j in jobs):
+        raise HTTPException(status_code=400, detail=f"Job with id {job.id} already exists")
+    if not job.title.strip():
         raise HTTPException(status_code=422, detail="Title cannot be empty")
-    todos.append(todo) # Append todo to todos list in memory
-    return todo 
+    jobs.append(job) # Append job to jobs list in memory
+    return job 
 
-# -------- Update todo --------
-@app.put("/todos/{todo_id}", response_model=TodoResponse)
-def update_todo(todo_id: int, updated_todo: TodoCreate): # Extract todo_id from url and assign as integer AND take Todo data input and set as updated_todo
-    index = find_todo(todo_id, todos)
+# -------- Update job --------
+@app.put("/jobs/{job_id}", response_model=JobResponse)
+def update_job(job_id: int, updated_job: JobCreate): # Extract job_id from url and assign as integer AND take job data input and set as updated_job
+    index = find_job(job_id, jobs)
     if index is None:
-        raise HTTPException(status_code=404, detail=f"Todo {todo_id} not found")
-    todos[index] = updated_todo # Updates original todo item (updated_todo)
-    return todos[index]
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    jobs[index] = updated_job # Updates original job item (updated_job)
+    return jobs[index]
 
-# -------- Delete todo --------
-@app.delete("/todos/{todo_id}")
-def delete_todo(todo_id: int):
-    index = find_todo(todo_id, todos)
+# -------- Delete job --------
+@app.delete("/jobs/{job_id}")
+def delete_job(job_id: int):
+    index = find_job(job_id, jobs)
     if index is None:
-        raise HTTPException(status_code=404, detail=f"Todo {todo_id} not found")
-    deleted = todos.pop(index) 
-    return {"detail": f"Todo {deleted.id} deleted"}
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    deleted = jobs.pop(index) 
+    return {"detail": f"Job {deleted.id} deleted"}
 
     

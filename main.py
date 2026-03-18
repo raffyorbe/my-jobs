@@ -31,19 +31,41 @@ def read_root(): # Function
 @app.get("/jobs", response_model=list[JobResponse]) # list each job following jobResponse format
 def get_jobs(
     completed: Optional[bool] = Query(default=None),
-    title: Optional[str] = Query(default=None)
+    title: Optional[str] = Query(default=None),
+    skip: int = Query(default=0), # how many records to skip
+    limit: int = Query(default=10), # how many records to return
+    sort: Optional[str] = Query(default=None), #what value to use for sorting
+    order: Optional[str] = Query(default="asc"), #ascending or descending order for sorting
 ):
     results = jobs 
 
     if completed is not None: # Filter by status
         results = [job for job in results if job.completed == completed]
+        # item to add in results FOR each item in results IF item in result.variable==condition
+        # "For each job in the results list, keep it if the condition is true. -> assign to job then add that to filtered results list"
+        #python creates variable job in each loop iteration
 
     if title is not None: #Filter by name (search function)
         results = [job for job in results if title.lower() in job.title.lower()]
 
     # results takes all job entries [] in jobs[] that meet the filtering condition
+
+    #sorting happens before pagination
+    descending = order == "desc"
+
+    if sort == "title":
+        results = sorted(results, key=lambda job: job.title, reverse=descending) 
+        # reverse is a bool that takes value of 'descending' - if true, set in descending order
+
+    if sort == "completed":
+        results = sorted(results, key=lambda job: job.completed, reverse=descending)
+
+    # pagination
+    results = results[skip: skip + limit]
+
+    # results are then paginated
     
-    return results # Returns list of jobs (filtered)
+    return results # Returns list of jobs (filtered -> sorted -> paginated)
 
 # -------- Read single job --------
 @app.get("/jobs/{job_id}", response_model=JobResponse) # Dynamic path
@@ -55,7 +77,7 @@ def get_job(job_id: int): # Extract job_id from url and assign as integer
 
 # -------- Create job --------
 @app.post("/jobs", response_model=JobResponse) # response_model tells function to return following jobResponse model
-def create_job(job: JobCreate): # Create job as jobCreate data type then run function.
+def create_job(job: JobCreate): # Create job as JobCreate data type then run function.
     if any(j.id == job.id for j in jobs):
         raise HTTPException(status_code=400, detail=f"Job with id {job.id} already exists")
     if not job.title.strip():

@@ -23,50 +23,27 @@ app.add_middleware(
 )
 
 # -------- Database --------
-jobs = [] 
+# jobs_router jobs.py 
 
 @app.get("/") # When browser runs 127.0.0.1:8000/, run the function below.
 def read_root(): # Function
     return {"message": "API is running"} # Output of the function
 
 # -------- Read job list --------
-# Transferred to jobs_router jobs.py
+# jobs_router jobs.py
 
 # -------- Read single job --------
-@app.get("/jobs/{job_id}", response_model=JobResponse) # Dynamic path
-def get_job(job_id: int): # Extract job_id from url and assign as integer
-    index = find_job(job_id, jobs)
-    if index is None:
-        raise HTTPException(status_code=404, detail=f"Job {job_id} not found") # Else (after loop), raise HTTP Exception
-    return jobs[index]
-
+# jobs_router jobs.py
 
 # -------- Create job --------
-@app.post("/jobs", response_model=JobResponse) # response_model tells function to return following jobResponse model
-def create_job(job: JobCreate): # Create job as JobCreate data type then run function.
-    if any(j.id == job.id for j in jobs):
-        raise HTTPException(status_code=400, detail=f"Job with id {job.id} already exists")
-    if not job.title.strip():
-        raise HTTPException(status_code=422, detail="Title cannot be empty")
-    jobs.append(job) # Append job to jobs list in memory
-    return job 
+# jobs_router jobs.py
+
 
 # -------- Update job --------
-@app.put("/jobs/{job_id}", response_model=JobResponse)
-def update_job(job_id: int, updated_job: JobCreate): # Extract job_id from url and assign as integer AND take job data input and set as updated_job
-    index = find_job(job_id, jobs)
-    if index is None:
-        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    jobs[index] = updated_job # Updates original job item (updated_job)
-    return jobs[index]
+# jobs_router jobs.py
 
 # -------- Delete job --------
-@app.delete("/jobs/{job_id}")
-def delete_job(job_id: int):
-    index = find_job(job_id, jobs)
-    if index is None:
-        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    deleted = jobs.pop(index) 
-    return {"detail": f"Job {deleted.id} deleted"}
+# jobs_router jobs.py
+
 
     

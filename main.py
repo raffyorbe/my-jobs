@@ -4,10 +4,13 @@ from models import JobCreate, JobResponse # Imports models from models.py -  fro
 from routes.jobs import router as jobs_router# From routes/jobs.py, import a router as jobs_router
 from fastapi.middleware.cors import CORSMiddleware # CORS
 from utils import find_job
+from database import engine
+from models_db import Job
 
 
 app = FastAPI() # Create web app instance. This is the API app
 app.include_router(jobs_router) # Add router from routes/job.py
+Job.metadata.create_all(bind=engine) #Create DB table
 
 # -------- React frontend connection --------
 origins = [

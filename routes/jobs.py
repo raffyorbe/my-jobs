@@ -12,7 +12,7 @@ router = APIRouter()
 # Database
 # jobs = []
 def get_db():
-    db = sessionLocal() # db will replace jobs = [] once declared as jobs in endpoint
+    db = sessionLocal() # manages the DB connection/session
     try:
         yield db
     finally:
@@ -22,9 +22,9 @@ def get_db():
 # READ all
 @router.get("/jobs") #response model also removed since this is now done by models_db.py
 def get_jobs(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), # uses resulting db session into endpoint automatically
 ):
-    jobs = db.query(Job).all()
+    jobs = db.query(Job).all() # returns all Job rows from the database
     
     return jobs
 

@@ -20,16 +20,51 @@ def get_db():
 
 
 # READ all
-@router.get("/jobs") #response model also removed since this is now done by models_db.py
+@router.get("/jobs")
 def get_jobs(
     db: Session = Depends(get_db), # uses resulting db session into endpoint automatically
+
+    completed: Optional[bool] = Query(default=None),
+    title: Optional[str] = Query(default=None),
+    skip: int = Query(default=0), # how many records to skip
+    limit: int = Query(default=10), # how many records to return
+    sort: Optional[str] = Query(default=None), #what value to use for sorting
+    order: Optional[str] = Query(default="asc"), #ascending or descending order for sorting
 ):
-    jobs = db.query(Job).all() # returns all Job rows from the database
+    # jobs = db.query(Job).all()
+    query = db.query(Job)
+
+    # Step 1 - FILTER
+    if completed is not None:
+        query = query.filter(Job.completed == completed)
+
+    if title is not None:
+        query = query.filter(Job.title.ilike(f"%{title}%"))
+
+    # Step 2 - SORT
+    descending = (order or "asc").lower() == "desc" # Bool 1 if == "desc"
+
+    if sort:
+        column = getattr(Job, sort, None) # Get column within the Job model that matches whatever the value of sort is. Else, none (in case sort value is ivalid).
+        if column is not None:
+            if descending: # If bool descending is 1
+                query = query.order_by(column.desc())
+            else:
+                query = query.order_by(column.asc())
     
-    return jobs
+    total = query.count() # Total of all filtered results - not after paginating which only returns total on the page
+
+    # Step 3 - PAGINATE
+    results =  query.offset(skip).limit(limit).all() # offset(skip) - start at index [skip]; limit(limit) - limit to (limit) number of rows
+    
+    return {
+        "total": total,
+        "count": len(results),
+        "data": results
+        }
 
 # # READ id
-# @router.get("/jobs/{job_id}", response_model=JobResponse) # Dynamic path
+# @router.get("/jobs/{job_id}")
 # def get_job(job_id: int): # Extract job_id from url and assign as integer
 #     index = find_job(job_id, jobs)
 #     if index is None:

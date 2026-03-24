@@ -31,7 +31,6 @@ def get_jobs(
     sort: Optional[str] = Query(default=None), #what value to use for sorting
     order: Optional[str] = Query(default="asc"), #ascending or descending order for sorting
 ):
-    # jobs = db.query(Job).all()
     query = db.query(Job)
 
     # Step 1 - FILTER
@@ -55,7 +54,7 @@ def get_jobs(
     total = query.count() # Total of all filtered results - not after paginating which only returns total on the page
 
     # Step 3 - PAGINATE
-    results =  query.offset(skip).limit(limit).all() # offset(skip) - start at index [skip]; limit(limit) - limit to (limit) number of rows
+    results =  query.offset(skip).limit(limit).all() # offset(skip) - start at index [skip]; limit(limit) - limit to (limit) number of rows; all() gets everything w/ or w/o filter sort paginate conditions
     
     return {
         "total": total,
@@ -63,38 +62,41 @@ def get_jobs(
         "data": results
         }
 
-# # READ id
-# @router.get("/jobs/{job_id}")
-# def get_job(job_id: int): # Extract job_id from url and assign as integer
-#     index = find_job(job_id, jobs)
-#     if index is None:
-#         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-#     return jobs[index]
+# READ id
+@router.get("/jobs/{job_id}")
+def get_job(job_id: int, db: Session = Depends(get_db)): 
+    job = db.query(Job).filter(Job.id == job_id).first() #Access db.query(Job) table, find the rows where Job.id (in table) is same as job_id (input) - return only one item first() instead of a list all()
+    if not job:
+        return {"error": "Job not found"} # Always {"key": "value"}
+    return job
 
-# # CREATE
-# @router.post("/jobs", response_model=JobResponse) # response_model tells function to return following jobResponse model
-# def create_job(job: JobCreate): # Create job as JobCreate data type then run function.
-#     if any(j.id == job.id for j in jobs):
-#         raise HTTPException(status_code=400, detail=f"Job with id {job.id} already exists")
-#     if not job.title.strip():
-#         raise HTTPException(status_code=422, detail="Title cannot be empty")
-#     jobs.append(job) # Append job to jobs list in memory
-#     return job
+# CREATE
+@router.post("/jobs") 
+def create_job(title: str, completed: bool, db: Session = Depends(get_db)): # This will shift back to include job: JobCreate because frontend sends JSON with data structure, not individual query paramaeters title completed etc.
+    new_job = Job(title = title, completed = completed) # in Job, title takes title (str) and completed takes completed (bool)
+    db.add(new_job) # Add new_job entry into db
+    db.commit() # Save the entry
+    db.refresh(new_job) # Pulls the latest data from db which might include auto generated id number
+    return new_job
 
-# # UPDATE
-# @router.put("/jobs/{job_id}", response_model=JobResponse)
-# def update_job(job_id: int, updated_job: JobCreate): # Extract job_id from url and assign as integer AND take job data input and set as updated_job
-#     index = find_job(job_id, jobs)
-#     if index is None:
-#         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-#     jobs[index] = updated_job # Updates original job item (updated_job)
-#     return jobs[index]
+# UPDATE
+@router.put("/jobs/{job_id}")
+def update_job(job_id: int, title: str, completed: bool, db: Session = Depends(get_db)): 
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        return {"error": "Job not found"}
+    job.title = title # Ignore error in syntax in IDE because at runtime, job will already exist
+    job.completed = completed
+    db.commit()
+    db.refresh(job)
+    return job
 
-# # DELETE
-# @router.delete("/jobs/{job_id}")
-# def delete_job(job_id: int):
-#     index = find_job(job_id, jobs)
-#     if index is None:
-#         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-#     deleted = jobs.pop(index) 
-#     return {"detail": f"Job {deleted.id} deleted"}
+# DELETE
+@router.delete("/jobs/{job_id}")
+def delete_job(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        return {"error": "Job not found"}
+    db.delete(job)
+    db.commit()
+    return {"message": "Job deleted"}

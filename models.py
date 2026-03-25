@@ -8,6 +8,10 @@ class JobCreate(BaseModel): # Input model
     completed: bool = False
 
 class JobResponse(BaseModel): # Output model
+    title: str
+    completed: bool
+
+class JobUpdate(BaseModel): # Update model
     id: int
     title: str
     completed: bool

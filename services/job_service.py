@@ -73,7 +73,7 @@ def update_job(job_id: int, job: JobUpdate, db: Session):
 # DELETE
 def delete_job(job_id: int, db: Session):
     job = db.query(Job).filter(Job.id == job_id).first()
-    if not job
+    if not job:
         return None
     db.delete(job)
     db.commit()

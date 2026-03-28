@@ -15,6 +15,7 @@ Job.metadata.create_all(bind=engine) #Create DB table
 # -------- React frontend connection --------
 origins = [
     "http://localhost:3000",  # React server
+    "http://localhost:5173", # Vite port
 ]
 
 app.add_middleware(

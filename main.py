@@ -16,7 +16,7 @@ Job.metadata.create_all(bind=engine) #Create DB table
 origins = [
     "http://localhost:3000",  # React server (local)
     "http://localhost:5173", # Vite port (local)
-    "https://raffyorbe.github.io" # GitHub Pages
+    "https://raffyorbe.github.io", # GitHub Pages
     "https://raffyorbe.com" # Custom domain
 ]
 

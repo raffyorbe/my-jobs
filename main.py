@@ -14,8 +14,9 @@ Job.metadata.create_all(bind=engine) #Create DB table
 
 # -------- React frontend connection --------
 origins = [
-    "http://localhost:3000",  # React server
-    "http://localhost:5173", # Vite port
+    "http://localhost:3000",  # React server (local)
+    "http://localhost:5173", # Vite port (local)
+    "http://raffyorbe.github.io" # GitHub Pages
 ]
 
 app.add_middleware(
@@ -49,5 +50,9 @@ def read_root(): # Function
 # -------- Delete job --------
 # jobs_router jobs.py
 
+# Uvicorn startup block
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=10000)
 
     
